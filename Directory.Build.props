@@ -1,0 +1,99 @@
+<Project>
+
+  <!--
+    Directory.Build.props — shared build configuration for ZeepkistPartSearch.
+
+    Everything the plugin needs at compile time is taken from the *local*
+    Zeepkist install and is referenced in place via HintPath. Game and BepInEx
+    binaries are NEVER copied into the repository or committed (see .gitignore).
+    Nothing is redistributed with the released mod except our own DLL.
+
+    The game location is never committed. Set it one of three ways:
+      dotnet build -p:GameDir=/path/to/Zeepkist
+      ZEEPKIST_GAME_DIR=/path/to/Zeepkist dotnet build
+      a local.props next to this file containing <GameDir>/path/to/Zeepkist</GameDir>
+    local.props is ignored by git; see local.props.example.
+  -->
+
+  <!-- Machine specific settings (game path) live here and are never committed. -->
+  <Import Project="local.props" Condition="Exists('local.props')" />
+
+  <PropertyGroup>
+    <GameDir Condition="'$(GameDir)' == '' and '$(ZEEPKIST_GAME_DIR)' != ''">$(ZEEPKIST_GAME_DIR)</GameDir>
+
+    <ManagedDir>$(GameDir)/Zeepkist_Data/Managed</ManagedDir>
+    <BepInExCoreDir>$(GameDir)/BepInEx/core</BepInExCoreDir>
+
+    <TargetFramework>net472</TargetFramework>
+
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      BepInEx core. Present in BepInEx/core/ at runtime, so Private=false keeps
+      them out of our build output and out of the release zip.
+    -->
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExCoreDir)/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExCoreDir)/BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Game logic: LEV_Inspector, BlockList, BlocksFolder, BlockProperties, MaterialHolder. -->
+    <Reference Include="Zeepkist">
+      <HintPath>$(ManagedDir)/Zeepkist.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Unity modules used to build the search bar and the result grid. -->
+    <Reference Include="UnityEngine">
+      <HintPath>$(ManagedDir)/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Image, ScrollRect, RectMask2D and the uGUI event system. -->
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ManagedDir)/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- CanvasRenderer, which every uGUI graphic needs. -->
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(ManagedDir)/UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- TextMeshProUGUI and TMP_InputField. -->
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(ManagedDir)/Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- I2 Localization, so search results carry the same names the inspector shows. -->
+    <Reference Include="l2Localization">
+      <HintPath>$(ManagedDir)/l2Localization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Fail fast, with an actionable message, when the references are missing. -->
+  <Target Name="ValidateGameReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(GameDir)/Zeepkist.exe')"
+           Text="GameDir does not look like a Zeepkist install (no Zeepkist.exe): '$(GameDir)'. Pass -p:GameDir=/path/to/Zeepkist." />
+    <Error Condition="!Exists('$(ManagedDir)/Zeepkist.dll')"
+           Text="Zeepkist.dll not found at '$(ManagedDir)'. Is GameDir correct?" />
+    <Error Condition="!Exists('$(BepInExCoreDir)/BepInEx.dll')"
+           Text="BepInEx is not installed at '$(BepInExCoreDir)'. Install BepInEx 5.4.x x64 before building." />
+    <Error Condition="!Exists('$(BepInExCoreDir)/0Harmony.dll')"
+           Text="0Harmony.dll not found at '$(BepInExCoreDir)'. The BepInEx install looks incomplete." />
+  </Target>
+
+</Project>

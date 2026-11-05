@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Test harness with no external test framework.
+
+    The plugin's Unity-free search files are compiled straight from the plugin project, so
+    the tests exercise the exact code that ships. Only the Unity-facing files (Plugin.cs,
+    ModConfig.cs, Patches/, UI/, Unity/) are left out, which is why the matching, ranking and
+    normalisation logic lives in Search/ in the first place.
+
+    Run it with dotnet run, project set to tests/ZeepkistPartSearch.LogicTests.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ZeepkistPartSearch.LogicTests</RootNamespace>
+    <AssemblyName>ZeepkistPartSearch.LogicTests</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="SearchChecks.cs" />
+    <Compile Include="SecurityChecks.cs" />
+
+    <!-- Production sources under test (Unity free by design). -->
+    <Compile Include="../../plugin/ZeepkistPartSearch.Plugin/Search/PartKind.cs" />
+    <Compile Include="../../plugin/ZeepkistPartSearch.Plugin/Search/PartEntry.cs" />
+    <Compile Include="../../plugin/ZeepkistPartSearch.Plugin/Search/PartFolder.cs" />
+    <Compile Include="../../plugin/ZeepkistPartSearch.Plugin/Search/PartCatalog.cs" />
+    <Compile Include="../../plugin/ZeepkistPartSearch.Plugin/Search/SearchScope.cs" />
+    <Compile Include="../../plugin/ZeepkistPartSearch.Plugin/Search/SearchOptions.cs" />
+    <Compile Include="../../plugin/ZeepkistPartSearch.Plugin/Search/PartQuery.cs" />
+  </ItemGroup>
+
+</Project>
