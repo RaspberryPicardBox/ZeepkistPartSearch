@@ -7,9 +7,9 @@ All notable changes to ZeepkistPartSearch are recorded here.
 ### Added
 
 - **A search bar at the very top of the level editor's parts selector**, built from the
-  inspector's own font and button prefab so it matches the game's UI. The bar reserves its own
-  strip by shrinking the parts ScrollRect from the top, so the first row of thumbnails is never
-  covered.
+  inspector's own font, rounded tile sprite and plate colour, so it looks like one of the
+  game's own controls. The bar reserves its own strip by shrinking the parts ScrollRect from
+  the top, so the first row of thumbnails is never covered.
 - **Whole-palette search by default.** The query looks through every folder, not just the one
   that is open. `Search/Scope = CurrentFolder` restricts it to the open folder instead.
 - Blocks, nature/tree parts and paint materials are all searchable, following whichever

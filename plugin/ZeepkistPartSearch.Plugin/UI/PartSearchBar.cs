@@ -5,17 +5,31 @@ using UnityEngine.UI;
 namespace ZeepkistPartSearch.UI
 {
     /// <summary>
-    /// Builds the search bar itself: a TextMeshPro input field with the same font the
-    /// inspector already uses, so it looks like part of the game's UI rather than a bolted-on
-    /// overlay.
+    /// Builds the search bar itself: a TextMeshPro input field styled as one of the inspector's
+    /// own tile plates, using the same font and (when it can be found) the same rounded sprite
+    /// the thumbnails use.
+    ///
+    /// The colours are Zeepkist's own, sampled from the parts grid: the pale yellow plate
+    /// (#FFE873) and a dark ink for the text, so the field reads as part of the inspector
+    /// rather than an overlay.
     ///
     /// The object is assembled while inactive so <see cref="TMP_InputField"/> never wakes up
     /// with a half-configured text component.
     /// </summary>
     internal static class PartSearchBar
     {
+        private static readonly Color PlateColour = new Color(1f, 0.909804f, 0.450980f, 1f);
+        private static readonly Color InkColour = new Color(0.286275f, 0.176471f, 0.050980f, 1f);
+        private static readonly Color AccentColour = new Color(1f, 0.572549f, 0f, 1f);
+
+        /// <summary>The sampled tile-plate colour, used when the game's own plate cannot be read.</summary>
+        internal static Color DefaultPlateColour
+        {
+            get { return PlateColour; }
+        }
+
         public static GameObject Create(Transform parent, TMP_FontAsset font, int height, string placeholder,
-            out TMP_InputField input, out TextMeshProUGUI text)
+            Sprite plate, Color plateTint, out TMP_InputField input, out TextMeshProUGUI text)
         {
             input = null;
             text = null;
@@ -30,22 +44,27 @@ namespace ZeepkistPartSearch.UI
             root.transform.SetParent(parent, false);
 
             Image background = root.AddComponent<Image>();
-            background.color = new Color(0.07f, 0.07f, 0.08f, 0.96f);
             background.raycastTarget = true;
+            background.color = plate != null ? plateTint : PlateColour;
+
+            if (plate != null)
+            {
+                background.sprite = plate;
+                background.type = plate.border != Vector4.zero ? Image.Type.Sliced : Image.Type.Simple;
+            }
 
             GameObject viewportObject = new GameObject("Text Area", typeof(RectTransform));
             viewportObject.transform.SetParent(root.transform, false);
             RectTransform viewport = (RectTransform)viewportObject.transform;
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
-            viewport.offsetMin = new Vector2(8f, 3f);
-            viewport.offsetMax = new Vector2(-8f, -3f);
+            viewport.offsetMin = new Vector2(10f, 3f);
+            viewport.offsetMax = new Vector2(-10f, -3f);
             viewportObject.AddComponent<RectMask2D>();
 
-            TextMeshProUGUI textComponent = CreateText("Text", viewport, font,
-                new Color(0.96f, 0.96f, 0.96f, 1f));
+            TextMeshProUGUI textComponent = CreateText("Text", viewport, font, InkColour);
             TextMeshProUGUI placeholderComponent = CreateText("Placeholder", viewport, font,
-                new Color(0.62f, 0.62f, 0.62f, 0.85f));
+                new Color(InkColour.r, InkColour.g, InkColour.b, 0.45f));
             placeholderComponent.text = string.IsNullOrEmpty(placeholder) ? ModConfig.DefaultPlaceholder : placeholder;
 
             TMP_InputField field = root.AddComponent<TMP_InputField>();
@@ -58,9 +77,9 @@ namespace ZeepkistPartSearch.UI
             field.richText = false;
             field.onFocusSelectAll = false;
             field.customCaretColor = true;
-            field.caretColor = new Color(1f, 0.85f, 0.2f, 1f);
-            field.caretWidth = 1;
-            field.selectionColor = new Color(0.35f, 0.55f, 0.9f, 0.45f);
+            field.caretColor = InkColour;
+            field.caretWidth = 2;
+            field.selectionColor = new Color(AccentColour.r, AccentColour.g, AccentColour.b, 0.35f);
 
             RectTransform rect = (RectTransform)root.transform;
             rect.sizeDelta = new Vector2(0f, height);
