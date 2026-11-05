@@ -32,10 +32,18 @@ namespace ZeepkistPartSearch.UI
         private TMP_InputField input;
 
         private RectTransform contentBox;
-        private ScrollRect scroll;
+        private RectTransform frame;
+        private Vector2 frameOffsetMax;
+        private Vector2 frameSizeDelta;
+        private Vector2 frameAnchoredPosition;
+        private bool frameShrunk;
+
+        private ScrollRect scrollRect;
         private RectTransform viewport;
         private Vector2 viewportOffsetMax;
         private bool viewportInset;
+        private float verifyAt;
+        private bool verified;
 
         private readonly List<ThumbnailButton> results = new List<ThumbnailButton>();
         private readonly List<ThumbnailButton> hiddenGameButtons = new List<ThumbnailButton>();
@@ -96,26 +104,23 @@ namespace ZeepkistPartSearch.UI
                 return;
             }
 
-            scroll = contentBox.GetComponentInParent<ScrollRect>();
-            Transform parent;
+            ScrollRect scroll = contentBox.GetComponentInParent<ScrollRect>();
 
-            // The bar lives inside the ScrollRect's frame and the viewport is inset to make
-            // room for it. That only works when the frame and the viewport are different
-            // objects; when there is no separate viewport the bar simply overlays the top.
-            if (scroll != null && scroll.viewport != null)
+            // The parts area is the ScrollRect: its rect is the thing whose top has to move
+            // down to make room. Insetting the viewport alone does not move the content, so
+            // the first row of thumbnails would stay behind the bar.
+            if (scroll != null)
             {
-                parent = scroll.transform;
+                frame = (RectTransform)scroll.transform;
+                scrollRect = scroll;
                 viewport = scroll.viewport;
             }
-            else
+            else if (inspector.createBlocksGUI != null)
             {
-                scroll = null;
-                viewport = null;
-                parent = inspector.createBlocksGUI != null
-                    ? inspector.createBlocksGUI.parent
-                    : contentBox.parent;
+                frame = inspector.createBlocksGUI;
             }
 
+            Transform parent = frame != null ? frame.parent : contentBox.parent;
             if (parent == null)
             {
                 return;
@@ -149,40 +154,41 @@ namespace ZeepkistPartSearch.UI
         }
 
         /// <summary>
-        /// Anchors the bar to the top edge of the parts area (the ScrollRect's framed rect, or
-        /// the grid when the inspector has no scroll view) and makes room for it by insetting
-        /// the viewport's top edge. Other mods' elements are not moved.
+        /// Puts the bar in the strip directly above the parts area and shrinks that area from
+        /// the top, so the bar owns real layout space instead of covering the first row of
+        /// thumbnails. Other mods' elements are not moved.
         /// </summary>
         private void PlaceBar()
         {
-            if (barRect == null || barPlaced)
+            if (barRect == null || barPlaced || frame == null)
             {
                 return;
             }
 
-            RectTransform frame = barRect.parent as RectTransform;
-            RectTransform reference = viewport != null ? viewport : contentBox;
-            if (frame == null || reference == null)
+            RectTransform parent = barRect.parent as RectTransform;
+            if (parent == null)
             {
                 return;
             }
 
             Rect frameRect = frame.rect;
-            if (Mathf.Approximately(frameRect.width, 0f) || Mathf.Approximately(frameRect.height, 0f))
+            Rect parentRect = parent.rect;
+            if (Mathf.Approximately(frameRect.width, 0f) || Mathf.Approximately(frameRect.height, 0f)
+                || Mathf.Approximately(parentRect.width, 0f) || Mathf.Approximately(parentRect.height, 0f))
             {
                 // The canvas has not been laid out yet; Update tries again.
                 return;
             }
 
             Vector3[] corners = new Vector3[4];
-            reference.GetWorldCorners(corners); // 0 bottom-left, 1 top-left, 2 top-right, 3 bottom-right
+            frame.GetWorldCorners(corners); // 0 bottom-left, 1 top-left, 2 top-right, 3 bottom-right
 
-            Vector3 bottomLeft = frame.InverseTransformPoint(corners[0]);
-            Vector3 topRight = frame.InverseTransformPoint(corners[2]);
+            Vector3 topLeft = parent.InverseTransformPoint(corners[1]);
+            Vector3 topRight = parent.InverseTransformPoint(corners[2]);
 
-            float xMin = Mathf.Clamp01((bottomLeft.x - frameRect.xMin) / frameRect.width);
-            float xMax = Mathf.Clamp01((topRight.x - frameRect.xMin) / frameRect.width);
-            float yTop = Mathf.Clamp01((topRight.y - frameRect.yMin) / frameRect.height);
+            float xMin = Mathf.Clamp01((topLeft.x - parentRect.xMin) / parentRect.width);
+            float xMax = Mathf.Clamp01((topRight.x - parentRect.xMin) / parentRect.width);
+            float yTop = Mathf.Clamp01((topLeft.y - parentRect.yMin) / parentRect.height);
 
             if (xMax <= xMin)
             {
@@ -196,17 +202,77 @@ namespace ZeepkistPartSearch.UI
             barRect.anchorMax = new Vector2(xMax, yTop);
             barRect.pivot = new Vector2(0.5f, 1f);
             barRect.sizeDelta = new Vector2(0f, height);
-            barRect.anchoredPosition = new Vector2(0f, -2f);
+            barRect.anchoredPosition = Vector2.zero;
             barRect.SetAsLastSibling();
 
-            if (viewport != null && !viewportInset)
-            {
-                viewportOffsetMax = viewport.offsetMax;
-                viewport.offsetMax = new Vector2(viewportOffsetMax.x, viewportOffsetMax.y - (height + 4f));
-                viewportInset = true;
-            }
+            // Move the parts area down by exactly the strip the bar now occupies. The bar's
+            // bottom and the frame's new top line up, with a two pixel seam.
+            frameOffsetMax = frame.offsetMax;
+            frameSizeDelta = frame.sizeDelta;
+            frameAnchoredPosition = frame.anchoredPosition;
+            ShrinkTop(frame, height + 2f);
+            frameShrunk = true;
 
             barPlaced = true;
+            verifyAt = Time.unscaledTime + 0.25f;
+            verified = false;
+        }
+
+        /// <summary>
+        /// One-frame safety net for hierarchies where the scroll view's viewport is anchored to
+        /// the panel rather than stretched inside the frame: if the viewport still reaches above
+        /// the bar's bottom edge, inset it by exactly the offending amount so the content also
+        /// starts below the bar.
+        /// </summary>
+        private void VerifyNoOverlap()
+        {
+            if (barRect == null || scrollRect == null || viewport == null)
+            {
+                return;
+            }
+
+            Vector3[] viewportCorners = new Vector3[4];
+            viewport.GetWorldCorners(viewportCorners);
+
+            Vector3[] barCorners = new Vector3[4];
+            barRect.GetWorldCorners(barCorners);
+
+            float overlap = viewportCorners[1].y - barCorners[0].y; // viewport top above bar bottom
+            if (overlap <= 1f)
+            {
+                return;
+            }
+
+            viewportOffsetMax = viewport.offsetMax;
+            viewport.offsetMax = new Vector2(viewportOffsetMax.x, viewportOffsetMax.y - overlap - 1f);
+            viewportInset = true;
+        }
+
+        /// <summary>
+        /// Reduces a rect's height by <paramref name="amount"/> from the top edge, keeping the
+        /// bottom edge where it is. Handles both anchor-stretched and fixed-height rects, which
+        /// is the difference between "offsetMax" and "sizeDelta + position".
+        /// </summary>
+        private static void ShrinkTop(RectTransform rect, float amount)
+        {
+            if (rect == null || amount <= 0f)
+            {
+                return;
+            }
+
+            if (!Mathf.Approximately(rect.anchorMin.y, rect.anchorMax.y))
+            {
+                Vector2 offsetMax = rect.offsetMax;
+                rect.offsetMax = new Vector2(offsetMax.x, offsetMax.y - amount);
+                return;
+            }
+
+            float pivotY = rect.pivot.y;
+            Vector2 size = rect.sizeDelta;
+            Vector2 position = rect.anchoredPosition;
+
+            rect.sizeDelta = new Vector2(size.x, Mathf.Max(size.y - amount, 0f));
+            rect.anchoredPosition = new Vector2(position.x, position.y - pivotY * amount);
         }
 
         /// <summary>Called by the patches when the game switches to blocks, trees or paints.</summary>
@@ -263,6 +329,12 @@ namespace ZeepkistPartSearch.UI
             if (!barPlaced)
             {
                 PlaceBar();
+            }
+
+            if (barPlaced && !verified && Time.unscaledTime >= verifyAt)
+            {
+                verified = true;
+                VerifyNoOverlap();
             }
 
             if (!autoFocused && config.AutoFocus && input != null)
@@ -798,7 +870,15 @@ namespace ZeepkistPartSearch.UI
                 input.onValueChanged.RemoveListener(OnValueChanged);
             }
 
-            if (viewport != null && viewportInset)
+            if (frameShrunk && frame != null)
+            {
+                frame.offsetMax = frameOffsetMax;
+                frame.sizeDelta = frameSizeDelta;
+                frame.anchoredPosition = frameAnchoredPosition;
+                frameShrunk = false;
+            }
+
+            if (viewportInset && viewport != null)
             {
                 viewport.offsetMax = viewportOffsetMax;
                 viewportInset = false;

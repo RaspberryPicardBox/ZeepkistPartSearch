@@ -55,6 +55,19 @@ box is destroyed.
 **Consequence:** the mod can hide the buttons the game built, add its own as siblings in the
 same `contentBox`, and restore the originals untouched when the query is cleared.
 
+### Where the search bar sits
+
+The bar is a sibling of the **ScrollRect** rect, anchored to that rect's top edge in the
+parent's space. The ScrollRect's own top edge is then moved down by the bar's height, so the
+bar owns a strip of the layout and the first row of thumbnails starts below it.
+
+Insetting the `ScrollRect.viewport` alone is not enough: in the shipped inspector the content
+does not move with it, and the top row of tiles stays behind the bar. A screenshot of build
+0.1.0 confirmed this (tile pixels at y=185, the bar covering 185–216, content resuming at 217),
+which is why the frame is shrunk instead. A one-frame check after placement still insets the
+viewport by the remaining overlap, for hierarchies where the viewport is anchored to the panel
+rather than stretched inside the frame.
+
 ## 3. Opening a folder
 
 ```csharp
