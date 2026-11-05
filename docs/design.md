@@ -25,7 +25,7 @@ Members this mod reads (all `public` in the installed build):
 | `createBlocksGUI` | `RectTransform` | Whether the parts grid is on screen |
 | `contentBox` | `RectTransform` | The box the game parents thumbnails into |
 | `buttonPrefab2` | `ThumbnailButton` | The thumbnail prefab to clone |
-| `scrollbar` | `ScrollBar` | Reset scroll position to the top |
+| `scrollbar` | `UnityEngine.UI.Scrollbar` | Reset scroll position to the top |
 | `inspectorTitle` | `TextMeshProUGUI` | Font for the search bar |
 | `isPopulated` | `bool` | Set false while the grid is being rebuilt |
 | `BlockHoverEnter(long, string)`, `BlockHoverEnterString(string, string)`, `BlockHoverExit()` | methods | The game's own hover title |
@@ -139,8 +139,9 @@ Unity modules are referenced together.
 ## 8. Why this is compatible with other mods
 
 **QuickFilter** (mod.io 4702386) is the closest neighbour: it also changes the block
-palette. It works by patching `CreateBlockGUI` with a **prefix that returns false**, replacing
-the method, then rebuilding the grid itself into `inspector.contentBox` and `allButtons2`.
+palette. It works by patching `CreateBlockGUI` with a prefix that returns `false` while it is
+filtering, which skips the game's method, and then rebuilds the grid itself into
+`inspector.contentBox` and `allButtons2`.
 
 This mod takes a different route on purpose:
 

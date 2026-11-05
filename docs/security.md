@@ -105,8 +105,8 @@ No palette object, list, folder or id is written to. No save file is touched.
 * **A custom part name containing markup** would be rendered by the game's own hover code, not
   by this mod. That is pre-existing behaviour for every custom block and is out of scope here,
   but it is the only place where third-party text reaches a TMP field in this feature.
-* **A malicious config file** is trusted local input; it can only change bounded numbers, a
-  scope enum, four booleans and a 32-character placeholder.
+* **A malicious config file** is trusted local input; it can only change bounded numbers, one
+  scope enum, seven booleans and a 32-character placeholder.
 * **A game update** that renames the inspector members used here disables the bar. It does not
   crash: construction and every patch body are wrapped and log a single line.
 * **Harmony patch failure** is caught in `Plugin.Awake` and logged; the game continues without
