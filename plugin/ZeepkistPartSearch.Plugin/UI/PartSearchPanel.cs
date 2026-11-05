@@ -138,6 +138,8 @@ namespace ZeepkistPartSearch.UI
             input = field;
             barRect = (RectTransform)bar.transform;
 
+            bar.AddComponent<SearchBarPointer>().Initialize(inspector);
+
             PlaceBar();
 
             if (input != null)

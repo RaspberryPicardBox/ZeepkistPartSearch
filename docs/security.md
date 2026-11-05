@@ -96,6 +96,7 @@ default rather than being trusted.
 | `contentBox.sizeDelta` | yes, the value captured before the first result is put back |
 | `inspector.scrollbar.value = 1` | no; this is the same thing the game does when it opens a folder |
 | `central.input.inputLocked` | yes, the captured value is put back on blur, hide and destroy |
+| `central.cam.OverrideOutsideGameView(bool)` | yes, on pointer exit and on disable, so the camera never stays in "over UI" mode |
 | `viewport.offsetMax` (room for the bar) | yes, on destroy |
 
 No palette object, list, folder or id is written to. No save file is touched.

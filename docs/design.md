@@ -125,6 +125,11 @@ typed into".
 `TMP_InputField.isFocused`, remembers the value it found, and restores it on blur, on hide and
 on destroy. Typing `save` searches; it does not save the level.
 
+The pointer needs the same treatment: `LEV_CustomButton.OnPointerEnter` calls
+`central.cam.OverrideOutsideGameView(true)` (and `false` on exit) so the cursor stays visible
+over UI and a drag does not move the camera. `SearchBarPointer` does exactly the same for the
+bar, and releases the override on disable so it cannot get stuck.
+
 ## 7. Localization
 
 `I2.Loc.LocalizationManager.GetTranslation(string)` (assembly `l2Localization.dll`) returns
