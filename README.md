@@ -16,7 +16,7 @@ through *Physics → Ice → Ramps* to find one part.
 
 | Part | What it is |
 | --- | --- |
-| Search bar | A TextMeshPro input field at the very top of the parts area, drawn on the inspector's own tile plate (pale yellow `#FFE873`, dark ink text) with the game's rounded sprite |
+| Search bar | A TextMeshPro input field at the very top of the parts area, on a rounded plate drawn in the game's tile colours (pale yellow `#FFE873`, dark ink text) |
 | Results | The game's real thumbnail buttons, in the order this mod ranks them |
 | Clear | Empty the field and the folder you were in comes back exactly as it was |
 

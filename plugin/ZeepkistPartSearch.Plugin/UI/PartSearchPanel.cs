@@ -134,10 +134,8 @@ namespace ZeepkistPartSearch.UI
 
             TMP_InputField field;
             TextMeshProUGUI text;
-            Color plateTint;
-            Sprite plate = FindPlate(out plateTint);
             bar = PartSearchBar.Create(parent, font, config.BarHeight, config.PlaceholderText,
-                plate, plateTint, out field, out text);
+                out field, out text);
             if (bar == null)
             {
                 return;
@@ -154,38 +152,6 @@ namespace ZeepkistPartSearch.UI
             {
                 input.onValueChanged.AddListener(OnValueChanged);
             }
-        }
-
-        /// <summary>
-        /// The rounded plate the game draws behind every thumbnail, and the colour it draws it
-        /// in, so the bar shares the inspector's exact corner art and hue instead of an
-        /// approximation. The sprite is null when the prefab does not expose one, in which case
-        /// the bar falls back to the sampled plate colour.
-        /// </summary>
-        private Sprite FindPlate(out Color tint)
-        {
-            tint = PartSearchBar.DefaultPlateColour;
-
-            if (inspector == null || inspector.buttonPrefab2 == null)
-            {
-                return null;
-            }
-
-            LEV_CustomButton button = inspector.buttonPrefab2.button;
-            if (button != null && button.buttonImage != null && button.buttonImage.sprite != null)
-            {
-                Color normal = button.normalColor;
-                if (normal.a > 0.5f)
-                {
-                    normal.a = 1f;
-                    tint = normal;
-                }
-
-                return button.buttonImage.sprite;
-            }
-
-            Image image = inspector.buttonPrefab2.GetComponent<Image>();
-            return image != null ? image.sprite : null;
         }
 
         /// <summary>

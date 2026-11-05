@@ -68,6 +68,21 @@ which is why the frame is shrunk instead. A one-frame check after placement stil
 viewport by the remaining overlap, for hierarchies where the viewport is anchored to the panel
 rather than stretched inside the frame.
 
+### Styling
+
+The bar is drawn as a rounded plate in the inspector's own colours: fill `#FFE873` (sampled
+from the thumbnail plates), a 1 px `#E0C25E` edge, and dark ink text `#4A2E0D`.
+
+An earlier build borrowed the thumbnail prefab's sprite. That sprite is a small tile texture,
+not a 9-slice plate, so stretching it across the full width smeared the art (screenshot of
+17:11). The sprite is now generated once at runtime (`UI/TilePlateSprite.cs`): a 20×20 RGBA
+texture drawn from a rounded-box distance field, 4×4 supersampled for smooth corners, and
+created with a nine-pixel 9-slice border. `Image.pixelsPerUnitMultiplier` is then set from the
+canvas's `referencePixelsPerUnit`, so the corners stay nine UI pixels at any UI scale.
+
+No art is read from disk and nothing is written; the texture is `HideAndDontSave` and lives
+for the session.
+
 ## 3. Opening a folder
 
 ```csharp

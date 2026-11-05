@@ -84,6 +84,7 @@ anywhere.
 | Palette rescan while searching | at most 4 times a second | `PartSearchPanel.RescanInterval` |
 | Palette snapshot rebuild | at most once every 10 seconds | `PartSearchPanel.CatalogLifetime` |
 | Placeholder text | 32 characters, markup stripped | `ModConfig.PlaceholderText` |
+| Plate texture | one 20×20 RGBA image, built once per session (1.6 KB) | `TilePlateSprite` |
 
 Every config value is clamped on read, and an out-of-range value falls back to the documented
 default rather than being trusted.

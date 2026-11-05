@@ -6,12 +6,13 @@ namespace ZeepkistPartSearch.UI
 {
     /// <summary>
     /// Builds the search bar itself: a TextMeshPro input field styled as one of the inspector's
-    /// own tile plates, using the same font and (when it can be found) the same rounded sprite
-    /// the thumbnails use.
+    /// own tile plates.
     ///
-    /// The colours are Zeepkist's own, sampled from the parts grid: the pale yellow plate
-    /// (#FFE873) and a dark ink for the text, so the field reads as part of the inspector
-    /// rather than an overlay.
+    /// The plate is drawn at runtime (<see cref="TilePlateSprite"/>) rather than borrowed from
+    /// the thumbnail prefab: that sprite is a small tile texture, and stretching it across a
+    /// full-width field smeared the art (build 0.1.0, screenshot of 17:11). The colours are
+    /// Zeepkist's own, sampled from the parts grid: the pale yellow plate (#FFE873) and a dark
+    /// ink for the text, so the field reads as part of the inspector rather than an overlay.
     ///
     /// The object is assembled while inactive so <see cref="TMP_InputField"/> never wakes up
     /// with a half-configured text component.
@@ -22,14 +23,8 @@ namespace ZeepkistPartSearch.UI
         private static readonly Color InkColour = new Color(0.286275f, 0.176471f, 0.050980f, 1f);
         private static readonly Color AccentColour = new Color(1f, 0.572549f, 0f, 1f);
 
-        /// <summary>The sampled tile-plate colour, used when the game's own plate cannot be read.</summary>
-        internal static Color DefaultPlateColour
-        {
-            get { return PlateColour; }
-        }
-
         public static GameObject Create(Transform parent, TMP_FontAsset font, int height, string placeholder,
-            Sprite plate, Color plateTint, out TMP_InputField input, out TextMeshProUGUI text)
+            out TMP_InputField input, out TextMeshProUGUI text)
         {
             input = null;
             text = null;
@@ -45,12 +40,25 @@ namespace ZeepkistPartSearch.UI
 
             Image background = root.AddComponent<Image>();
             background.raycastTarget = true;
-            background.color = plate != null ? plateTint : PlateColour;
 
+            Sprite plate = TilePlateSprite.Get();
             if (plate != null)
             {
                 background.sprite = plate;
-                background.type = plate.border != Vector4.zero ? Image.Type.Sliced : Image.Type.Simple;
+                background.type = Image.Type.Sliced;
+                background.color = Color.white;
+
+                // Keep the 9-slice border at nine UI pixels whatever the canvas's reference
+                // resolution is, so the corners cannot grow or shrink with UI settings.
+                Canvas canvas = root.GetComponentInParent<Canvas>();
+                if (canvas != null && canvas.referencePixelsPerUnit > 0f)
+                {
+                    background.pixelsPerUnitMultiplier = canvas.referencePixelsPerUnit / 100f;
+                }
+            }
+            else
+            {
+                background.color = PlateColour;
             }
 
             GameObject viewportObject = new GameObject("Text Area", typeof(RectTransform));
